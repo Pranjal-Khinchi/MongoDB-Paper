@@ -1,0 +1,212 @@
+
+ Task 1: Insert the first student (Arun) using insertOne()
+
+
+use collegeDB
+
+db.students.insertOne({
+    _id: 101,
+    name: "Arun",
+    dept: "CSE",
+    marks: 78,
+    scores: [
+        { subject: "DBMS", mark: 85 },
+        { subject: "Maths", mark: 76 }
+    ]
+})
+```
+
+**Output:**
+
+
+{
+    acknowledged: true,
+    insertedId: 101
+}
+
+
+### Task 2: Try inserting another student with the same _id
+
+db.students.insertOne({
+    _id: 101,
+    name: "Arun",
+    dept: "CSE",
+    marks: 78
+})
+
+
+**Output:**
+
+```javascript
+E11000 duplicate key error
+```
+
+Task 3: Insert the remaining five students using insertMany()
+
+db.students.insertMany([
+    {
+        _id: 102,
+        name: "Bala",
+        dept: "IT",
+        marks: 66,
+        scores: [
+            { subject: "DBMS", mark: 60 },
+            { subject: "Maths", mark: 72 }
+        ]
+    },
+    {
+        _id: 103,
+        name: "Chitra",
+        dept: "CSE",
+        marks: 91,
+        scores: [
+            { subject: "DBMS", mark: 95 },
+            { subject: "Maths", mark: 87 }
+        ]
+    },
+    {
+        _id: 104,
+        name: "Divya",
+        dept: "ECE",
+        marks: 72,
+        scores: [
+            { subject: "DBMS", mark: 55 },
+            { subject: "Maths", mark: 89 }
+        ]
+    },
+    {
+        _id: 105,
+        name: "Eswar",
+        dept: "IT",
+        marks: 84,
+        scores: [
+            { subject: "DBMS", mark: 88 },
+            { subject: "Maths", mark: 80 }
+        ]
+    },
+    {
+        _id: 106,
+        name: "Farah",
+        dept: "CSE",
+        marks: 59,
+        scores: [
+            { subject: "DBMS", mark: 45 },
+            { subject: "Maths", mark: 73 }
+        ]
+    }
+])
+
+**Output:**
+
+
+{
+    acknowledged: true,
+    insertedIds: {
+        '0': 102,
+        '1': 103,
+        '2': 104,
+        '3': 105,
+        '4': 106
+    }
+}
+
+
+Task 4: Display all students belonging to the CSE department
+
+db.students.find({ dept: "CSE" })
+
+**Output:**
+
+```text
+Arun    - CSE - 78
+Chitra  - CSE - 91
+Farah   - CSE - 59
+```
+
+Task 5: Find students whose overall marks are 75 or more
+
+
+
+db.students.find({
+    marks: { $gte: 75 }
+})
+```
+
+**Output:**
+
+```text
+Arun    - 78
+Chitra  - 91
+Eswar   - 84
+```
+
+Task 6: Find students belonging to either CSE or IT department
+
+**Command:**
+db.students.find({
+    dept: { $in: ["CSE", "IT"] }
+})
+
+
+**Output:**
+
+```text
+Arun    - CSE
+Bala    - IT
+Chitra  - CSE
+Eswar   - IT
+Farah   - CSE
+```
+task 7: Find students who scored more than 80 in DBMS
+
+**Command:**
+
+```javascript
+db.students.find({
+    scores: {
+        $elemMatch: {
+            subject: "DBMS",
+            mark: { $gt: 80 }
+        }
+    }
+})
+```
+
+**Output:**
+
+```text
+Arun    - DBMS: 85
+Chitra  - DBMS: 95
+Eswar   - DBMS: 88
+```
+
+Task 8: Display the top 3 students according to their marks
+
+**Command:**
+
+```javascript
+db.students.find(
+    {},
+    {
+        _id: 0,
+        name: 1,
+        marks: 1
+    }
+).sort({ marks: -1 }).limit(3)
+```
+
+**Output:**
+
+```javascript
+[
+    { name: "Chitra", marks: 91 },
+    { name: "Eswar", marks: 84 },
+    { name: "Arun", marks: 78 }
+]
+```
+
+
+
+
+.
+

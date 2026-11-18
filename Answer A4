@@ -1,0 +1,238 @@
+
+Scenario A4: Banking App – Building and Checking a Replica Set
+
+Task 1: Start three MongoDB instances and initiate the replica set
+
+**Create three folders:**
+
+```cmd
+mkdir C:\data\rs0-1
+mkdir C:\data\rs0-2
+mkdir C:\data\rs0-3
+```
+
+**Terminal 1:**
+
+```cmd
+mongod --replSet rs0 --port 27017 --dbpath C:\data\rs0-1 --bind_ip localhost
+```
+
+**Terminal 2:**
+
+```cmd
+mongod --replSet rs0 --port 27018 --dbpath C:\data\rs0-2 --bind_ip localhost
+```
+
+**Terminal 3:**
+
+```cmd
+mongod --replSet rs0 --port 27019 --dbpath C:\data\rs0-3 --bind_ip localhost
+```
+
+Connect to MongoDB:
+
+```cmd
+mongosh --port 27017
+```
+
+**Initiate the replica set:**
+
+```javascript
+rs.initiate({
+    _id: "rs0",
+    members: [
+        { _id: 0, host: "localhost:27017" },
+        { _id: 1, host: "localhost:27018" },
+        { _id: 2, host: "localhost:27019" }
+    ]
+})
+```
+
+**Output:**
+
+```javascript
+{ ok: 1 }
+```
+Task 2: Identify PRIMARY and SECONDARY members
+
+**Command:**
+
+```javascript
+rs.status()
+```
+
+To display member details:
+
+```javascript
+rs.status().members.map(m => ({
+    name: m.name,
+    state: m.stateStr,
+    health: m.health
+}))
+```
+
+**Expected Output:**
+
+```javascript
+[
+    {
+        name: "localhost:27017",
+        state: "PRIMARY",
+        health: 1
+    },
+    {
+        name: "localhost:27018",
+        state: "SECONDARY",
+        health: 1
+    },
+    {
+        name: "localhost:27019",
+        state: "SECONDARY",
+        health: 1
+    }
+]
+```
+
+Task 3: Insert an account document using majority write concern
+
+Select the database:
+
+```javascript
+use bankDB
+```
+
+**Command:**
+
+```javascript
+db.accounts.insertOne(
+    {
+        accNo: 1001,
+        holder: "Kumar",
+        balance: 5000
+    },
+    {
+        writeConcern: {
+            w: "majority",
+            j: true,
+            wtimeout: 5000
+        }
+    }
+)
+```
+
+**Expected Output:**
+
+```javascript
+{
+    acknowledged: true,
+    insertedId: ObjectId("...")
+}
+```
+
+Task 4: Set read preference to secondaryPreferred and read the account
+
+Connect using the replica set connection string:
+
+```cmd
+mongosh "mongodb://localhost:27017,localhost:27018,localhost:27019/bankDB?replicaSet=rs0"
+```
+
+**Set read preference:**
+
+```javascript
+db.getMongo().setReadPref("secondaryPreferred")
+```
+
+**Read the account:**
+
+```javascript
+db.accounts.find()
+```
+
+**Expected Output:**
+
+```javascript
+[
+    {
+        accNo: 1001,
+        holder: "Kumar",
+        balance: 5000
+    }
+]
+```
+Task 5: Inspect the oplog entry created by the insert
+
+Switch to the local database:
+
+```javascript
+use local
+```
+
+**Command:**
+
+```javascript
+db.oplog.rs.find({
+    ns: "bankDB.accounts"
+}).sort({
+    $natural: -1
+}).limit(5).pretty()
+```
+
+**Expected Output:**
+
+```javascript
+{
+    op: "i",
+    ns: "bankDB.accounts",
+    o: {
+        accNo: 1001,
+        holder: "Kumar",
+        balance: 5000
+    },
+    ts: Timestamp(...)
+}
+```
+
+Task 6: Force the primary to step down
+
+Connect to the current primary and execute:
+
+```javascript
+rs.stepDown(60)
+```
+
+**Expected Output:**
+
+The current primary steps down, and another eligible secondary is elected as the new primary.
+
+Check the new replica set status:
+
+```javascript
+rs.status()
+```
+
+ Task 7: Check replication health and replication lag
+
+**Command 1:**
+
+```javascript
+rs.status()
+```
+
+**Command 2:**
+
+```javascript
+rs.printSecondaryReplicationInfo()
+```
+
+**Expected Output:**
+
+```text
+source: localhost:27018
+0 secs behind the primary
+
+source: localhost:27019
+0 secs behind the primary
+```
+
+The exact replication lag may vary depending on the system
